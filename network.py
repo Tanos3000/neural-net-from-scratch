@@ -71,3 +71,59 @@ def forward(X, W1, b1, W2, b2):
     A2 = softmax(Z2)        # output probabilities (one per digit, per sample)
     cache = {"Z1": Z1, "A1": A1, "Z2": Z2, "A2": A2}
     return A2, cache
+
+
+def one_hot(y, n_classes=OUTPUT_SIZE):
+    """Turns integer labels (e.g. 7) into one-hot vectors (e.g. [0,0,0,0,0,0,0,1,0,0])."""
+    encoded = np.zeros((y.size, n_classes))
+    encoded[np.arange(y.size), y] = 1
+    return encoded
+
+
+def cross_entropy_loss(probs, y):
+    """How wrong the predictions are, as a single number - lower is better.
+
+    For each sample, this only looks at the probability the network assigned
+    to the *correct* class and takes -log() of it. If the network was 100%
+    confident in the right answer, that probability is 1 and -log(1) = 0 -
+    zero loss, nothing to improve. The closer that probability gets to 0
+    (very confident in the *wrong* answer), the more -log() blows up towards
+    infinity - a large penalty. Averaged across the batch.
+    """
+    n_samples = probs.shape[0]
+    correct_class_probs = probs[np.arange(n_samples), y]
+    # Clip to avoid log(0), which would be -infinity.
+    correct_class_probs = np.clip(correct_class_probs, 1e-12, 1.0)
+    return -np.mean(np.log(correct_class_probs))
+
+
+def backward(X, y, W2, cache):
+    """Backpropagation: work out how much each weight contributed to the loss.
+
+    This is the chain rule in action: the loss depends on A2, which depends
+    on Z2, which depends on W2 and A1, which depends on Z1, which depends on
+    W1. To find "how does changing W1 affect the loss" (all the way at the
+    other end of that chain), we multiply the local effect of each step
+    together, working backward from the loss to the first layer - hence
+    "back"-propagation. Each line below is one link in that chain.
+    """
+    n_samples = X.shape[0]
+    A1, A2, Z1 = cache["A1"], cache["A2"], cache["Z1"]
+    Y = one_hot(y)
+
+    # For softmax + cross-entropy together, this combined derivative
+    # simplifies beautifully to just "predicted probabilities minus the
+    # true one-hot labels" - a well-known result that avoids a much messier
+    # separate derivative for softmax and for the loss.
+    dZ2 = (A2 - Y) / n_samples
+
+    dW2 = A1.T @ dZ2
+    db2 = np.sum(dZ2, axis=0)
+
+    dA1 = dZ2 @ W2.T
+    dZ1 = dA1 * (Z1 > 0)  # derivative of ReLU: 1 where Z1 was positive, 0 otherwise
+
+    dW1 = X.T @ dZ1
+    db1 = np.sum(dZ1, axis=0)
+
+    return dW1, db1, dW2, db2
