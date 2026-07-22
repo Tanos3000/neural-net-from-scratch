@@ -6,14 +6,14 @@ A handwritten-digit recognizer built with nothing but NumPy — forward pass, ba
 
 ## Problem / Motivation
 
-It's easy to call `model.fit()` in scikit-learn or PyTorch without ever seeing what actually happens inside. This project builds a neural network the hard way — one matrix multiplication and one derivative at a time — to prove an honest, verifiable understanding of the math behind machine learning, not just the ability to call a library.
+It's easy to call `model.fit()` in scikit-learn or PyTorch without ever seeing what actually happens inside. This project builds a neural network from the ground up, implementing each matrix multiplication and derivative by hand, to see how the math behind machine learning actually works rather than just calling a library.
 
 ## Key Findings
 
 - **98.14% test accuracy** on MNIST (10,000 handwritten digit images the network never trained on), after 15 epochs of training.
 - **Backpropagation verified correct via gradient checking**: analytical gradients matched independent numerical estimates to within 6×10⁻⁸ relative error — far below the 1×10⁻⁷ threshold considered a passing check.
 - **Consistent across all 10 digits**: per-digit test accuracy ranges from 97.5% to 99.2% — no digit is a major weak spot.
-- **Cross-validated against scikit-learn**: an independent `MLPClassifier` with the same architecture reaches a comparable 97.69% under the same number of iterations — strong evidence this from-scratch implementation is genuinely correct, not accidentally lucky.
+- **Cross-validated against scikit-learn**: an independent `MLPClassifier` with the same architecture reaches a comparable 97.69% under the same number of iterations, supporting that this from-scratch implementation is correct.
 - Misclassified digits are genuinely ambiguous handwriting (see `assets/misclassified_examples.png`), not random failures — a sign the network learned real patterns.
 
 ## Tech Stack
@@ -62,4 +62,4 @@ jupyter notebook            # run notebooks 01 to 05 in order
 
 ## What I learned
 
-Gradient checking was the most valuable part of this project — without it, I'd have had no way to know whether my backpropagation math was subtly wrong versus just producing a mediocre result. I also learned a real lesson about fair comparisons the hard way: my first attempt at sanity-checking against scikit-learn used identical raw hyperparameters and scored only 28%, which briefly made me doubt my own implementation, until I realized scikit-learn's optimizer interprets those numbers completely differently — the honest fix was comparing against its sensible defaults instead of forcing identical numbers onto two different algorithms.
+Gradient checking mattered most in this project - without it, I'd have had no way to know whether my backpropagation math was subtly wrong versus just producing a mediocre result. My first attempt at sanity-checking against scikit-learn used identical raw hyperparameters and scored only 28%, which briefly made me doubt my own implementation. The actual issue was that scikit-learn's optimizer interprets those hyperparameters differently; the fix was comparing against its own sensible defaults instead of forcing identical numbers onto two different algorithms.
